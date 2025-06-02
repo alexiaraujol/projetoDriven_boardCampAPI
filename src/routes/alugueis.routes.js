@@ -8,10 +8,8 @@ const alugueisRouter = Router();
 
 alugueisRouter.get("/rentals",getAlugueis);
 alugueisRouter.post("/rentals",validateSchema(alugueisSchema),inserirAluguel);
-alugueisRouter.put("/rentals/:id",validateSchema(alugueisSchema),finalizarAluguel);
+alugueisRouter.put("/rentals/:id/return",validateSchema(alugueisSchema),finalizarAluguel);
 alugueisRouter.delete("/rentals/:id",apagarAluguel);
-
-
 
 
 export default alugueisRouter;
