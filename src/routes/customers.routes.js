@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getCustomers, getCustomersById, inserirCustomers } from "../controllers/customers.controllers.js";
-import { validateSchema } from "../middleware/validateSchema.middleware.js";
 import { customersSchema } from "../schemas/customers.schemas.js";
+import { validateSchema } from "../middlewares/validateSchema.middleware.js";
 
 
 

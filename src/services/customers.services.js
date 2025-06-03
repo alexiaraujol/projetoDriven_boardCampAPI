@@ -1,6 +1,4 @@
-
-import { db } from "../database/db.connection.js";
-import { getCustomersByIdRepository, getCustomersRepository } from "../repositories/customers.repositorie.js";
+import { getCustomersByCpfRepository, getCustomersByIdRepository, getCustomersRepository, inserirCustomersRepository } from "../repositories/customers.repositorie.js";
 
 
 export async function getCustomersServices() {
@@ -18,25 +16,33 @@ export async function getCustomersByIdServices(id) {
 
 
 export async function inserirCustomersServices(name, phone, cpf) {
+     console.log('CPF recebido:', cpf); // Adicione esta linha
+    // Validação do CPF: deve ter 11 dígitos numéricos
+    if (!cpf || cpf.replace(/\D/g, '').length !== 11) throw {
+        type: "bad_request",
+        message: "CPF inválido, deve ter 11 dígitos"
+    };
 
-    const existingCpf = await getCustomersByCpfRepository(cpf);
+    // Verifica se o CPF já existe no banco
+    const existingCpfResult = await getCustomersByCpfRepository(cpf);
+    const existingCpf = existingCpfResult.rows || [];
 
-    if (existingCpf.length > 0) {
-        return null;
-    }
+    if (existingCpf.length > 0) throw {
+        type: "conflict",
+        message: "CPF já cadastrado"
+    };
 
-    if (cpf.length !== 11 || cpf === "") {
-        return null;
-    }
+    // Validação do telefone
+    if (!phone || phone.length < 10 || phone.length > 11) throw {
+        type: "bad_request",
+        message: "Telefone inválido, deve ter entre 10 e 11 dígitos"
+    };
 
-    if (phone.length < 10 || phone.length > 11 || phone === "") {
-        return null;
-    }
-
-    if (!name || name === "") {
-        return null;
-    }
-
+    // Validação do nome
+    if (!name || name.trim() === "") throw {
+        type: "bad_request",
+        message: "Nome inválido"
+    };
 
     await inserirCustomersRepository(name, phone, cpf);
 
@@ -44,6 +50,5 @@ export async function inserirCustomersServices(name, phone, cpf) {
         name,
         phone,
         cpf
-    }
-
+    };
 }

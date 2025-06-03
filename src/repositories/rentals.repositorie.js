@@ -9,7 +9,7 @@ export async function getRentalsRepository() {
 }
 export async function getRentalsRepositoryById(id) {
     const rentalResult = await db.query(`SELECT * FROM rentals WHERE id = $1`, [id]);
-    return rentalResult.rows[0];
+    return rentalResult.rows;
 }
 
 export async function inserirRentalRepository(customerId, gameId, rentDate, daysRented, originalPrice) {

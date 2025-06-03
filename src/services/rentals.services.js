@@ -1,6 +1,7 @@
 import { db } from "../database/db.connection.js";
 import { getCustomersByIdRepository } from "../repositories/customers.repositorie.js";
-import { finalizarRentalsRepository, getRentalsRepository } from "../repositories/rentals.repositorie.js";
+import { getGameByIdRepository } from "../repositories/games.repositorie.js";
+import { deleteRentalsRepository, finalizarRentalsRepository, getRentalsRepository, getRentalsRepositoryById, inserirRentalRepository } from "../repositories/rentals.repositorie.js";
 
 
 export async function getRentalsServices() {
@@ -15,28 +16,32 @@ export async function getRentalsServices() {
 export async function inserirRentalServices(customerId, gameId, daysRented) {
 
     const customerResult = await getCustomersByIdRepository(customerId);
-    if (!customerResult || customerResult.rows.length === 0) {
-        return null;
-    }
 
+    if (!customerResult || customerResult.length === 0) throw {
+        type: "bad_request",
+        message: "Cliente não encontrado"
+    };
 
     const gameResult = await getGameByIdRepository(gameId);
+    console.log('Resultado do getGameByIdRepository:', gameResult);
 
-    if (gameResult.rows.length === 0) {
-        return null;
-    }
+    if (!gameResult || gameResult.length === 0) throw {
+        type: "bad_request",
+        message: "Jogo não encontrado"
+    };
 
-    const game = gameResult.rows[0];
-
+    const game = gameResult[0];
 
     const openRentalsResult = await db.query(
         `SELECT COUNT(*) FROM rentals WHERE "gameId" = $1 AND "returnDate" IS NULL`,
         [gameId]
     );
+
     const openRentals = parseInt(openRentalsResult.rows[0].count);
-    if (openRentals >= game.stockTotal) {
-        return null;
-    }
+    if (openRentals >= game.stockTotal) throw {
+        type: "conflict",
+        message: "Jogo não disponível"
+    };
 
 
     const rentDate = new Date();
@@ -58,15 +63,29 @@ export async function inserirRentalServices(customerId, gameId, daysRented) {
 
 export async function finalizarRentalsServices(id) {
 
-    const rentalResult = await getRentalsRepositoryById(id);
-    if (rentalResult.rows.length === 0) {
-        return null;
+    function formatDate(date) {
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
     }
 
-    const rental = rentalResult.rows[0];
+    const rentalResult = await getRentalsRepositoryById(id);
+    if (rentalResult.length === 0) throw {
+        type: "bad_request",
+        message: "Aluguel não encontrado"
+    };
 
-    if (rental.returnDate) {
-        return null;
+    const rental = rentalResult[0];
+
+    console.log('Valor de returnDate:', rental.returnDate);
+    console.log(rental)
+    if (rental.returnDate && rental.returnDate !== null && rental.returnDate !== undefined) {
+        throw {
+            type: "bad_request",
+            message: "Aluguel já finalizado"
+        };
     }
 
     const now = new Date(); // usamos para cálculo e para salvar no banco
@@ -101,15 +120,25 @@ export async function finalizarRentalsServices(id) {
 }
 
 export async function deleteRentalsServices(id) {
+ 
+    const rentalResult = await getRentalsRepositoryById(id);
+    if (!rentalResult || rentalResult.length === 0) {
+        throw {
+            type: "not_found",
+            message: "Aluguel não encontrado"
+        };
+    }
+
+    const rental = rentalResult[0];
 
 
-    if (returnDate === null) {
-            return res.status(400).send("Aluguel ainda não finalizado");
-        }
+    if (!rental.returnDate) {
+        throw {
+            type: "bad_request",
+            message: "Aluguel ainda não finalizado"
+        };
+    }
 
-        await deleteRentalsRepository(id);
-
-   
-
+    await deleteRentalsRepository(id);
 }
 
