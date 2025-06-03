@@ -8,6 +8,11 @@ export async function getGamesService() {
 
 export async function inserirGamesService(name, image, stockTotal, pricePerDay) {
 
+    if(name === " ") throw {
+        type: "bad_request",
+        message: "Nome do jogo não pode ser vazio"
+    };
+
     if (!name || !image || stockTotal == null || pricePerDay == null) throw {
         type: "bad_request",
         message: "Todos os campos são obrigatórios"
